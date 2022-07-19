@@ -53,8 +53,28 @@ func doAnother2(ctx context.Context, ch <-chan int) {
 	}
 }
 
-func ()  {
-	
+func doSomething3(ctx context.Context) {
+	deadline := time.Now().Add(1500 * time.Millisecond)
+	ctx, cancel := context.WithDeadline(ctx, deadline)
+	defer cancel()
+
+	ch := make(chan int)
+	go doAnother2(ctx, ch)
+
+	for num := 1; num <= 3; num++ {
+		select {
+		case ch <- num:
+			time.Sleep(1 * time.Second)
+		case <-ctx.Done():
+			break
+		}
+	}
+
+	cancel()
+
+	time.Sleep(100 * time.Millisecond)
+
+	fmt.Printf("doSomething: finished\n")
 }
 
 func main() {
@@ -62,5 +82,5 @@ func main() {
 	ctx := context.Background()
 
 	ctx = context.WithValue(ctx, "myKey", "myValue")
-	doSomething2(ctx)
+	doSomething3(ctx)
 }
